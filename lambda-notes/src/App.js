@@ -36,6 +36,11 @@ const ContentStyled = styled(Col)`
 //Initialize a global reference to the RT DB on Firebase
 const notesRef = firebase.database().ref('notes')
 
+//Initialize back-end URL
+const devBackEndURL = 'http://localhost:4000/notes'
+const prodBackEndURL = 'https://lambda-notes-backside9.herokuapp.com/notes'
+const url = prodBackEndURL;
+
 class App extends Component {
   constructor(){
     super();
@@ -68,7 +73,7 @@ class App extends Component {
 
 
     //  ****  LOCAL SERVER   ****
-    axios.get('http://localhost:4000/notes')
+    axios.get(url)
       .then(({data}) => {
         this.setState({notes:data})
       })
@@ -102,7 +107,7 @@ class App extends Component {
 
 
     //  ****  LOCAL SERVER   ****
-    axios.post('http://localhost:4000/notes', {title:noteTitle, textBody:noteTextBody})
+    axios.post(url, {title:noteTitle, textBody:noteTextBody})
     .then(({data}) => {
       let notes = [...this.state.notes, data];
       this.setState({notes})
@@ -117,7 +122,7 @@ class App extends Component {
     // notesRef.child(id).update({textBody})
 
     //  ****  LOCAL SERVER   ****
-    axios.post(`http://localhost:4000/notes/${id}`, {title, textBody})
+    axios.post(`${url}/${id}`, {title, textBody})
     .then(({data}) => {
       let notes = [...this.state.notes].map(cv => {
         if (cv.id === data.id){
@@ -146,7 +151,7 @@ class App extends Component {
 
 
     //  ****  LOCAL SERVER   ****
-    axios.delete(`http://localhost:4000/notes/${this.state.deleteNote.id}`)
+    axios.delete(`${url}/${this.state.deleteNote.id}`)
     .then(({data}) => {
       let notes = [...this.state.notes].filter(cv => cv.id != this.state.deleteNote.id)
       this.setState({notes}, () => {
