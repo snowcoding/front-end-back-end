@@ -2,7 +2,8 @@
 import React, { Component } from 'react';
 import { Container, Row, Col } from 'reactstrap';
 import firebase from '../src/components/firebase';
-import styled from 'styled-components'
+import styled from 'styled-components';
+import axios from 'axios';
 
 // Components
 import Sidebar from '../src/components/Sidebar'
@@ -48,21 +49,29 @@ class App extends Component {
   }
   
   componentDidMount(){
-    // Run this to initialize the database only runs once ever!!
+    //  ****  FIREBASE  ****
+    // // Run this to initialize the database only runs once ever!!
     // this.initializeFireBaseData()
 
-    //Listen for changes to any value in the FB RT DB reference
-    notesRef.on('value', (snapshot) => {
+    // // Listen for changes to any value in the FB RT DB reference
+    // notesRef.on('value', (snapshot) => {
 
-      if (snapshot.val){
-        // Since firebase stores object, we need to convert it to an array of object to work with our architecture
-        let notes = Object.entries(snapshot.val()).map( entry => entry[1])
+    //   if (snapshot.val){
+    //     // Since firebase stores object, we need to convert it to an array of object to work with our architecture
+    //     let notes = Object.entries(snapshot.val()).map( entry => entry[1])
 
-        //Set state shorthand, when the key name is the same as the name of the value variable
-        this.setState({notes})  
-      }
+    //     //Set state shorthand, when the key name is the same as the name of the value variable
+    //     this.setState({notes})  
+    //   }
 
-    });
+    // });
+
+
+    //  ****  LOCAL SERVER   ****
+    axios.get('http://localhost:4000/notes')
+      .then(({data}) => {
+        this.setState({notes:data})
+      })
   }
 
   initializeFireBaseData = () => {
@@ -79,23 +88,46 @@ class App extends Component {
   }
 
   saveNewNote = (noteTitle, noteTextBody) => {    
-    let newNoteInFB = notesRef.push()
+    //  ****  FIREBASE  ****
+    // let newNoteInFB = notesRef.push()
 
-    let newNote = {
-      "id": newNoteInFB.key,
-      "tags": ["tag", "doctor4"],
-      "title": noteTitle,
-      "textBody":noteTextBody
-    }
+    // let newNote = {
+    //   "id": newNoteInFB.key,
+    //   "tags": ["tag", "doctor4"],
+    //   "title": noteTitle,
+    //   "textBody":noteTextBody
+    // }
     
-    newNoteInFB.set(newNote)
+    // newNoteInFB.set(newNote)
+
+
+    //  ****  LOCAL SERVER   ****
+    axios.post('http://localhost:4000/notes', {title:noteTitle, textBody:noteTextBody})
+    .then(({data}) => {
+      let notes = [...this.state.notes, data];
+      this.setState({notes})
+    })
 
   }
 
   editNote = (id, title, textBody) => {
+    //  ****  FIREBASE  ****
     //Reference the id and then call update on the field, via shorthand
-    notesRef.child(id).update({title})
-    notesRef.child(id).update({textBody})
+    // notesRef.child(id).update({title})
+    // notesRef.child(id).update({textBody})
+
+    //  ****  LOCAL SERVER   ****
+    axios.post(`http://localhost:4000/notes/${id}`, {title, textBody})
+    .then(({data}) => {
+      let notes = [...this.state.notes].map(cv => {
+        if (cv.id === data.id){
+          cv.title = data.title;
+          cv.textBody = data.textBody;
+        }
+        return cv
+      })
+      this.setState({notes})
+    })
   }
 
   onDeleteLinkClick = (id) => {
@@ -108,9 +140,19 @@ class App extends Component {
   }
 
   deleteNoteClick = () => {
+    //  ****  FIREBASE  ****
+    // notesRef.child(this.state.deleteNote.id).remove()
+    // this.deletingCompleted()
 
-    notesRef.child(this.state.deleteNote.id).remove()
-    this.deletingCompleted()
+
+    //  ****  LOCAL SERVER   ****
+    axios.delete(`http://localhost:4000/notes/${this.state.deleteNote.id}`)
+    .then(({data}) => {
+      let notes = [...this.state.notes].filter(cv => cv.id != this.state.deleteNote.id)
+      this.setState({notes}, () => {
+        this.deletingCompleted()
+      })
+    })
   }
 
   deletingCompleted = () =>{
